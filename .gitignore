@@ -1,0 +1,61 @@
+.next
+node_modules
+.DS_Store
+npm-debug.log*
+# 依赖目录（必须忽略，体积大且可通过 package.json 重新生成）
+node_modules/
+
+# 构建输出目录（不同工具生成的目录名可能不同）
+dist/
+build/
+.out/
+.next/       # Next.js
+.nuxt/       # Nuxt.js
+.cache/      # 常见缓存目录
+
+# 环境变量文件（包含敏感信息，如 API 密钥）
+.env
+.env.local
+.env.*.local
+
+# 日志文件
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 操作系统生成的文件
+.DS_Store
+Thumbs.db
+
+# 编辑器/IDE 配置（团队统一配置建议单独存放，不提交个人配置）
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+
+# 测试覆盖率目录
+coverage/
+.nyc_output/
+
+# 打包文件
+*.tgz
+*.tar.gz
+
+# 临时文件
+tmp/
+temp/
+
+# 某些特定框架的额外文件
+# Vue
+*.local
+
+# React
+.eslintcache
+*.tsbuildinfo
+
+# 小程序（如微信）
+miniprogram_npm/
