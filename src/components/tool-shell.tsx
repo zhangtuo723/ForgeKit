@@ -1,7 +1,11 @@
 "use client";
 
+import type { Extension } from "@codemirror/state";
 import type { ReactNode } from "react";
 import { useState } from "react";
+
+import { CodeEditor } from "@/components/code-editor";
+import { Button } from "@/components/ui/button";
 
 export function ToolShell({
   title,
@@ -13,7 +17,10 @@ export function ToolShell({
   onTransform,
   onClear,
   error,
-  extras
+  extras,
+  copy,
+  inputExtensions,
+  outputExtensions
 }: {
   title: string;
   description: string;
@@ -25,64 +32,81 @@ export function ToolShell({
   onClear: () => void;
   error?: string | null;
   extras?: ReactNode;
+  copy: {
+    run: string;
+    clear: string;
+    copy: string;
+    resultPlaceholder: string;
+  };
+  inputExtensions?: Extension[];
+  outputExtensions?: Extension[];
 }) {
   const [input, setInput] = useState("");
 
   return (
-    <section className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
-      <div className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6">
-        <div className="mb-4">
-          <h2 className="text-2xl font-semibold text-white">{title}</h2>
+    <section className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)]">
+      <div className="flex min-h-[600px] flex-col rounded-xl border border-white/10 bg-slate-900/70 p-4 sm:min-h-[620px] sm:p-5">
+        <div className="mb-4 border-b border-white/8 pb-4">
+          <h2 className="text-xl font-semibold text-white sm:text-[1.65rem]">{title}</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
             {description}
           </p>
         </div>
-        <label className="mb-3 block text-sm font-medium text-slate-300">{inputLabel}</label>
-        <textarea
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder={inputPlaceholder}
-          className="min-h-[280px] w-full rounded-3xl border border-white/10 bg-slate-950 px-4 py-4 text-sm leading-6 text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/50"
-        />
-        <div className="mt-4 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => onTransform(input)}
-            className="rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
-          >
-            Run
-          </button>
-          <button
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <label className="block text-sm font-medium text-slate-300">{inputLabel}</label>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Input</span>
+        </div>
+        <div className="flex-1">
+          <CodeEditor
+            value={input}
+            onChange={setInput}
+            placeholder={inputPlaceholder}
+            extensions={inputExtensions}
+          />
+        </div>
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/8 pt-4">
+          <div className="flex flex-wrap gap-2.5">
+          <Button type="button" onClick={() => onTransform(input)}>
+            {copy.run}
+          </Button>
+          <Button
             type="button"
             onClick={() => {
               setInput("");
               onClear();
             }}
-            className="rounded-full border border-white/10 px-5 py-3 text-sm text-slate-300 transition hover:border-white/20 hover:text-white"
+            variant="secondary"
           >
-            Clear
-          </button>
+            {copy.clear}
+          </Button>
+          </div>
+          <span className="hidden text-xs text-slate-500 sm:block">Local processing</span>
         </div>
         {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
       </div>
 
-      <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6">
-        <div className="mb-3 flex items-center justify-between gap-4">
-          <h3 className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">
+      <div className="flex min-h-[600px] flex-col rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:min-h-[620px] sm:p-5">
+        <div className="mb-3 flex items-center justify-between gap-4 border-b border-white/8 pb-4">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 sm:text-sm">
             {outputLabel}
           </h3>
-          <button
+          <Button
             type="button"
+            size="sm"
+            variant="secondary"
             onClick={() => navigator.clipboard.writeText(output)}
-            className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300 transition hover:border-cyan-300/40 hover:text-cyan-200"
           >
-            Copy
-          </button>
+            {copy.copy}
+          </Button>
         </div>
-        <pre className="min-h-[280px] overflow-auto rounded-3xl bg-slate-950 p-4 text-sm leading-6 text-slate-200">
-          {output || "Result will appear here."}
-        </pre>
-        {extras ? <div className="mt-6">{extras}</div> : null}
+        <div className="flex-1">
+          <CodeEditor
+            value={output || copy.resultPlaceholder}
+            readOnly
+            extensions={outputExtensions}
+          />
+        </div>
+        {extras ? <div className="mt-5 border-t border-white/8 pt-4">{extras}</div> : null}
       </div>
     </section>
   );

@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
 
-import { SiteFooter } from "@/components/site-footer";
-import { SiteHeader } from "@/components/site-header";
-
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,7 +9,13 @@ export const metadata: Metadata = {
   },
   description:
     "Fast, focused developer tools built with Next.js. Start with formatters, decoders, generators, and API helpers.",
-  metadataBase: new URL("https://devtoolbox.local")
+  metadataBase: new URL("https://devtoolbox.local"),
+  alternates: {
+    languages: {
+      "zh-CN": "/zh",
+      en: "/en"
+    }
+  }
 };
 
 export default function RootLayout({
@@ -22,11 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        <SiteHeader />
-        <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
-        <SiteFooter />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

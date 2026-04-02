@@ -3,7 +3,9 @@ export type ToolCategory =
   | "Encoding"
   | "Auth"
   | "Generators"
-  | "Time";
+  | "Time"
+  | "Comparison"
+  | "Media";
 
 export type ToolDefinition = {
   slug: string;
@@ -62,6 +64,30 @@ export const tools: ToolDefinition[] = [
     description: "Generate UUID v4 identifiers in batches for test data and fixtures.",
     keywords: ["uuid generator", "uuid v4", "random id"],
     useCases: ["Seed databases", "Generate fixtures", "Create request identifiers"]
+  },
+  {
+    slug: "json-diff",
+    name: "JSON Diff",
+    category: "Comparison",
+    description: "Compare two JSON documents and highlight structural changes instantly.",
+    keywords: ["json diff", "json compare", "payload diff"],
+    useCases: ["Compare API payloads", "Review config changes", "Inspect nested object updates"]
+  },
+  {
+    slug: "qr-code-generator",
+    name: "QR Code Generator",
+    category: "Media",
+    description: "Generate QR codes for URLs, text, Wi-Fi credentials, and app download links.",
+    keywords: ["qr code generator", "qrcode", "二维码生成"],
+    useCases: ["Share links quickly", "Generate Wi-Fi QR codes", "Create download handoff pages"]
+  },
+  {
+    slug: "image-cropper",
+    name: "Image Cropper",
+    category: "Media",
+    description: "Crop uploaded images with fixed or freeform ratios and export the result instantly.",
+    keywords: ["image cropper", "crop image", "图片裁剪"],
+    useCases: ["Prepare avatars", "Cut social share images", "Trim screenshots quickly"]
   }
 ];
 
@@ -85,6 +111,14 @@ export const categories = [
   {
     name: "Time",
     description: "Translate timestamps, UTC strings, and deadlines without guesswork."
+  },
+  {
+    name: "Comparison",
+    description: "Spot payload and config changes without manually scanning raw JSON."
+  },
+  {
+    name: "Media",
+    description: "Generate shareable assets like QR codes directly from developer workflows."
   }
 ] as const;
 

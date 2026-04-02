@@ -4,6 +4,13 @@
 
 :root {
   color-scheme: dark;
+  font-size: 15px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    font-size: 14px;
+  }
 }
 
 body {
@@ -14,6 +21,8 @@ body {
     radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 22%),
     linear-gradient(180deg, #020617 0%, #0f172a 52%, #020617 100%);
   color: #e2e8f0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
 }
 
 * {
@@ -27,4 +36,100 @@ a {
 
 ::selection {
   background: rgba(34, 211, 238, 0.35);
+}
+
+.cm-editor {
+  height: 100%;
+}
+
+.cm-editor.cm-focused {
+  outline: none;
+}
+
+.cm-scroller {
+  font-family:
+    "SF Mono",
+    "JetBrains Mono",
+    "Fira Code",
+    Consolas,
+    "Liberation Mono",
+    monospace;
+}
+
+.cm-gutters {
+  border-right: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(11, 18, 38, 0.92) !important;
+}
+
+.cm-activeLine,
+.cm-activeLineGutter {
+  background: rgba(34, 211, 238, 0.05) !important;
+}
+
+.cm-placeholder {
+  color: rgba(148, 163, 184, 0.55) !important;
+}
+
+.cm-content,
+.cm-gutter {
+  font-size: 13px;
+}
+
+.cm-editor {
+  background: #0a1226;
+}
+
+.cm-scroller,
+.cm-gutters {
+  min-height: 100%;
+}
+
+@media (max-width: 640px) {
+  .cm-content,
+  .cm-gutter {
+    font-size: 12px;
+  }
+}
+
+.tools-marquee-shell {
+  position: relative;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+.tools-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 1.25rem;
+  animation: tools-marquee 38s linear infinite;
+}
+
+.tools-marquee-shell:hover .tools-marquee-track {
+  animation-play-state: paused;
+}
+
+.tools-marquee-item {
+  width: min(420px, calc(100vw - 4rem));
+  flex: 0 0 auto;
+}
+
+@keyframes tools-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 0.625rem));
+  }
+}
+
+@media (max-width: 640px) {
+  .tools-marquee-track {
+    gap: 1rem;
+    animation-duration: 30s;
+  }
+
+  .tools-marquee-item {
+    width: min(330px, calc(100vw - 3rem));
+  }
 }
