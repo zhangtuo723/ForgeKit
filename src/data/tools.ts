@@ -26,6 +26,14 @@ export const tools: ToolDefinition[] = [
     useCases: ["Debug API responses", "Clean payloads before sharing", "Validate config files"]
   },
   {
+    slug: "json-yaml-converter",
+    name: "JSON YAML Converter",
+    category: "Data",
+    description: "Convert JSON and YAML in both directions for config editing and payload cleanup.",
+    keywords: ["json yaml", "yaml converter", "config transform"],
+    useCases: ["Convert config files", "Prepare Kubernetes snippets", "Normalize structured text"]
+  },
+  {
     slug: "timestamp-converter",
     name: "Timestamp Converter",
     category: "Time",
@@ -40,6 +48,14 @@ export const tools: ToolDefinition[] = [
     description: "Encode or decode Base64 text safely in the browser.",
     keywords: ["base64 encode", "base64 decode", "base64 tool"],
     useCases: ["Inspect tokens", "Convert payloads", "Debug encoded strings"]
+  },
+  {
+    slug: "hash-generator",
+    name: "Hash Generator",
+    category: "Encoding",
+    description: "Generate cryptographic hashes for text locally with common SHA algorithms.",
+    keywords: ["hash generator", "sha256", "checksum"],
+    useCases: ["Verify payload integrity", "Compare text fingerprints", "Generate checksums quickly"]
   },
   {
     slug: "url-encoder",
@@ -72,6 +88,14 @@ export const tools: ToolDefinition[] = [
     description: "Compare two JSON documents and highlight structural changes instantly.",
     keywords: ["json diff", "json compare", "payload diff"],
     useCases: ["Compare API payloads", "Review config changes", "Inspect nested object updates"]
+  },
+  {
+    slug: "regex-tester",
+    name: "Regex Tester",
+    category: "Data",
+    description: "Test regular expressions against sample text with instant match and group details.",
+    keywords: ["regex tester", "regular expression", "pattern match"],
+    useCases: ["Debug validation rules", "Inspect capture groups", "Check search patterns quickly"]
   },
   {
     slug: "qr-code-generator",

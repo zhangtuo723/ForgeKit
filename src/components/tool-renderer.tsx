@@ -1,9 +1,12 @@
 import { Base64EncoderTool } from "@/components/tools/base64-encoder-tool";
+import { HashGeneratorTool } from "@/components/tools/hash-generator-tool";
 import { ImageCropperTool } from "@/components/tools/image-cropper-tool";
+import { JsonYamlConverterTool } from "@/components/tools/json-yaml-converter-tool";
 import { JsonFormatterTool } from "@/components/tools/json-formatter-tool";
 import { JsonDiffTool } from "@/components/tools/json-diff-tool";
 import { JwtDecoderTool } from "@/components/tools/jwt-decoder-tool";
 import { QrCodeGeneratorTool } from "@/components/tools/qr-code-generator-tool";
+import { RegexTesterTool } from "@/components/tools/regex-tester-tool";
 import { TimestampConverterTool } from "@/components/tools/timestamp-converter-tool";
 import { UrlEncoderTool } from "@/components/tools/url-encoder-tool";
 import { UuidGeneratorTool } from "@/components/tools/uuid-generator-tool";
@@ -13,12 +16,18 @@ export function ToolRenderer({ slug, locale }: { slug: string; locale: Locale })
   switch (slug) {
     case "json-formatter":
       return <JsonFormatterTool locale={locale} />;
+    case "json-yaml-converter":
+      return <JsonYamlConverterTool locale={locale} />;
     case "json-diff":
       return <JsonDiffTool locale={locale} />;
+    case "regex-tester":
+      return <RegexTesterTool locale={locale} />;
     case "timestamp-converter":
       return <TimestampConverterTool locale={locale} />;
     case "base64-encoder":
       return <Base64EncoderTool locale={locale} />;
+    case "hash-generator":
+      return <HashGeneratorTool locale={locale} />;
     case "image-cropper":
       return <ImageCropperTool locale={locale} />;
     case "url-encoder":

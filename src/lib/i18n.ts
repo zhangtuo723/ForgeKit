@@ -169,6 +169,12 @@ const toolTranslations: Record<Locale, Record<ToolDefinition["slug"], ToolTransl
       keywords: ["json 格式化", "json 校验", "json 美化"],
       useCases: ["调试接口响应", "整理分享前的 payload", "校验配置文件"]
     },
+    "json-yaml-converter": {
+      name: "JSON YAML Converter",
+      description: "在 JSON 和 YAML 之间双向转换，适合配置文件和结构化文本处理。",
+      keywords: ["json yaml 转换", "yaml 转换", "配置转换"],
+      useCases: ["转换配置文件", "整理 Kubernetes 片段", "统一结构化文本格式"]
+    },
     "timestamp-converter": {
       name: "Timestamp Converter",
       description: "双向转换 Unix 时间戳和可读日期，适合日志、数据库和接口联调。",
@@ -180,6 +186,12 @@ const toolTranslations: Record<Locale, Record<ToolDefinition["slug"], ToolTransl
       description: "在浏览器内安全地进行 Base64 编码与解码。",
       keywords: ["base64 编码", "base64 解码", "base64 工具"],
       useCases: ["检查 token 内容", "转换文本 payload", "排查编码字符串"]
+    },
+    "hash-generator": {
+      name: "Hash Generator",
+      description: "在本地为文本生成常见 SHA 哈希，适合快速校验和对比内容指纹。",
+      keywords: ["哈希生成", "sha256", "校验和"],
+      useCases: ["校验 payload 完整性", "比较文本指纹", "快速生成 checksum"]
     },
     "url-encoder": {
       name: "URL Encoder",
@@ -205,6 +217,12 @@ const toolTranslations: Record<Locale, Record<ToolDefinition["slug"], ToolTransl
       keywords: ["json 对比", "json diff", "payload 比较"],
       useCases: ["对比接口返回", "查看配置差异", "检查嵌套对象变化"]
     },
+    "regex-tester": {
+      name: "Regex Tester",
+      description: "输入正则和测试文本，立即查看命中结果、位置和捕获组。",
+      keywords: ["正则测试", "regex", "正则表达式"],
+      useCases: ["调试校验规则", "查看捕获组", "快速检查匹配模式"]
+    },
     "qr-code-generator": {
       name: "QR Code Generator",
       description: "为链接、文本和 Wi-Fi 信息生成二维码，适合分享、测试和快速跳转。",
@@ -225,6 +243,12 @@ const toolTranslations: Record<Locale, Record<ToolDefinition["slug"], ToolTransl
       keywords: ["json formatter", "json beautify", "json validate"],
       useCases: ["Debug API responses", "Clean payloads before sharing", "Validate config files"]
     },
+    "json-yaml-converter": {
+      name: "JSON YAML Converter",
+      description: "Convert JSON and YAML in both directions for config editing and payload cleanup.",
+      keywords: ["json yaml", "yaml converter", "config transform"],
+      useCases: ["Convert config files", "Prepare Kubernetes snippets", "Normalize structured text"]
+    },
     "timestamp-converter": {
       name: "Timestamp Converter",
       description: "Convert Unix timestamps and readable dates in both directions.",
@@ -236,6 +260,12 @@ const toolTranslations: Record<Locale, Record<ToolDefinition["slug"], ToolTransl
       description: "Encode or decode Base64 text safely in the browser.",
       keywords: ["base64 encode", "base64 decode", "base64 tool"],
       useCases: ["Inspect tokens", "Convert payloads", "Debug encoded strings"]
+    },
+    "hash-generator": {
+      name: "Hash Generator",
+      description: "Generate cryptographic hashes for text locally with common SHA algorithms.",
+      keywords: ["hash generator", "sha256", "checksum"],
+      useCases: ["Verify payload integrity", "Compare text fingerprints", "Generate checksums quickly"]
     },
     "url-encoder": {
       name: "URL Encoder",
@@ -260,6 +290,12 @@ const toolTranslations: Record<Locale, Record<ToolDefinition["slug"], ToolTransl
       description: "Compare two JSON documents and highlight structural changes instantly.",
       keywords: ["json diff", "json compare", "payload diff"],
       useCases: ["Compare API payloads", "Review config changes", "Inspect nested object updates"]
+    },
+    "regex-tester": {
+      name: "Regex Tester",
+      description: "Test regular expressions against sample text with instant match and group details.",
+      keywords: ["regex tester", "regular expression", "pattern match"],
+      useCases: ["Debug validation rules", "Inspect capture groups", "Check search patterns quickly"]
     },
     "qr-code-generator": {
       name: "QR Code Generator",
