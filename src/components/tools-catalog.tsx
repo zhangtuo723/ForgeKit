@@ -56,7 +56,7 @@ export function ToolsCatalog({
     <div className="space-y-5">
       <section className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 sm:p-5">
         <div className="grid gap-4 lg:grid-cols-[1.4fr,0.6fr]">
-          <div className="relative">
+          <div className="relative self-start">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <Input
               value={query}
