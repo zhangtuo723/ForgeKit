@@ -1,6 +1,6 @@
 # ForgeKit
 
-基于 Next.js、React、TypeScript 和 MySQL 的模块化工作空间。当前子项目为「幕间 Studio」剧本创作与人物资产管理系统，网页与外部 Agent 使用同一套业务接口和数据。
+基于 Next.js、React、TypeScript 和 MySQL 的模块化工作空间。包含「幕间 Studio」剧本创作与人物资产管理系统，以及「DDS」3D 交互简历。工作室网页与外部 Agent 使用同一套业务接口和数据；简历是独立的静态页面。
 
 ## 功能
 
@@ -40,6 +40,7 @@ npm run dev
 
 | 用途 | 地址 |
 | --- | --- |
+| DDS 交互简历（公开，无需登录） | `/resume` |
 | 登录 | `/studio/login` |
 | 工作台 | `/studio/dashboard`（`/studio` 会跳转到这里） |
 | 剧本库与编辑器 | `/studio/scripts`、`/studio/scripts/{id}` |
@@ -48,6 +49,16 @@ npm run dev
 | API 描述 | `/api/studio/openapi` |
 
 旧 `/login`、`/dashboard`、`/scripts` 等页面及旧 API 地址保留 307 跳转，保留查询参数和请求方法；新调用直接使用上述地址。旧项目、成员页面分别跳转至 `/studio/scripts`、`/studio/characters`；旧通用项目、成员、统计和日志 API 迁入 `/api/studio/legacy/{projects,users,dashboard,activities}`。工作室统计与日志仍为 `/api/studio/overview`、`/api/studio/activities`。
+
+## DDS 交互简历
+
+`/resume` 在构建时预渲染，页面不请求 MySQL、COS 或 GitHub API，不需要管理员登录。正文包括 DDS 的工作经历、三个核实过公开 README 的开源项目及技术方向；姓名使用 DDS，不展示学校、联系方式或内部部门。项目说明维护在 `src/components/resume/portfolio-data.ts`，工作经历维护在 `ResumeExperience.tsx`，来源链接直接指向公开仓库。
+
+Three.js 滨水创作街区占满页面背景：弧形展馆、锯齿屋顶工坊、圆窗摄影馆与经历步道分别组成地标。支持环视、平移、缩放、WASD 漫游、日夜主题、地标聚焦和视角重置。静止时按需渲染，水面与小船动画默认关闭；重复建筑细节实例化，阴影图只在初始化、主题切换和上下文恢复时更新，不运行实时反射或后处理。浏览器无法运行 WebGL 时保留概念图封面和全部简历入口。
+
+页面使用本地 Fraunces 可变衬线字体（普通与斜体），完整 SIL OFL 1.1 许可证随字体放在 `public/resume/fonts/`。模型由 `harbor-model.ts` 中的独立建筑造型生成，概念图 `public/resume/harbor-concept.webp` 由 image_gen 生成，只用于美术参考、加载和错误封面，提示词见 `docs/resume-art-direction.md`。无第三方字体、模型或图片运行时请求。文字简历保留在 HTML 中，提供独立阅读模式和打印样式，禁用 JavaScript 时直接显示文字版。CSS Modules 将样式限定在此模块内。
+
+`node scripts/render-harbor-preview.mjs` 可离线导出模型的 SVG/PNG 构图预览至忽略的 `artifacts/` 目录。该脚本使用 CPU 几何投影，不访问浏览器；不模拟 WebGL 贴图、阴影和水面效果，也不代表网页截图或真实帧率测试。
 
 ## 管理员账号与密码
 
