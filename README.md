@@ -148,10 +148,11 @@ npm start
 
 在 Linux 服务器上安装依赖和构建，使用 nginx HTTPS 反向代理到应用端口，设置 `FORGE_APP_URL` 为公开 HTTPS 来源，例如 `https://forgekit.cn`，不附加 `/studio` 或 `/api/studio`。nginx 上传限制至少设为 `client_max_body_size 12m;`，否则大图会被代理拒绝。
 
-2026-11-06 已替换线上旧站，登录入口为 [https://forgekit.cn/studio/login](https://forgekit.cn/studio/login)。本次部署的应用代码版本为 `bad281e051792bacbbfbf612100b061759b40eb7`，沿用独立 MySQL 数据库和已有 COS 图片；未备份旧站。
+2026-11-07 已部署 DDS 滨水交互简历，入口为 [https://forgekit.cn/resume](https://forgekit.cn/resume)。当前应用代码版本为 `442d6ff8a537c29761887a11d09f79fdbd90704e`；剧本工作室继续使用 [https://forgekit.cn/studio/login](https://forgekit.cn/studio/login)，沿用独立 MySQL、已有 COS 图片和服务器生产环境配置。2026-11-06 替换旧站时未备份旧站。
 
 - 代码在 `/opt/forgekit/releases/<commit>/`，使用 Linux 上构建的 Next.js standalone 产物，并复制 `.next/static`（如有 `public` 也需复制）到 standalone 目录。
 - PM2 应用名为 `forgekit`，配置在 `/etc/forgekit/ecosystem.config.cjs`；Node 通过 `--env-file=/etc/forgekit/studio.env` 加载生产环境变量，监听 `127.0.0.1:3001`。PM2 已保存进程列表，并启用开机恢复。
+- PM2 的 `cwd` 与 `script` 均明确指向当前 release，`script` 使用绝对路径。跨 release 切换时不能只修改 `cwd` 后 reload，否则 PM2 可能继续使用缓存的旧入口；切换后核对实际 `pm_exec_path`，再验证 `/resume` 的内容与构建资源。
 - nginx 使用 `/etc/nginx/conf.d/forgekit.conf`，通过现有 HTTPS 证书代理到应用，上传限制为 `12m`。
 - 生产配置文件权限为 `600`，父目录权限为 `700`。COS 配置经临时公钥加密传输后在服务器解密；MySQL 密码读取服务器已有凭证，连接地址使用 `127.0.0.1:3306`。本地 SSH 隧道参数和 Windows 路径不写入生产配置，登录密码仅以哈希保存在数据库中。
 - 数据目录为 `/var/lib/forgekit`，应用日志位于 `/var/log/forgekit`。服务器配置了 2 GiB swap；构建时 Node 堆上限为 768 MiB，运行时为 384 MiB。
