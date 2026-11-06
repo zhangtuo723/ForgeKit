@@ -1,0 +1,10 @@
+export type UserRole = "管理员" | "编辑者" | "成员";
+export type UserStatus = "正常" | "停用";
+export type ProjectStatus = "进行中" | "已完成" | "已暂停" | "待开始";
+export type Priority = "高" | "中" | "低";
+export type User = { id: string; name: string; email: string; role: UserRole; status: UserStatus; department: string; joinedAt: string };
+export type Project = { id: string; name: string; description: string; code: string; category: string; status: ProjectStatus; priority: Priority; ownerId: string | null; progress: number; dueDate: string; createdAt: string; updatedAt: string; color: string };
+export type Activity = { id: string; actor: string; action: string; target: string; type: "project" | "user" | "system"; createdAt: string };
+export type Settings = { workspaceName: string; workspaceDescription: string; contactEmail: string; timezone: string };
+export type SessionUser = { username: string; name: string; role: string };
+export type DashboardData = { stats: { totalProjects: number; activeProjects: number; completedProjects: number; totalUsers: number }; projects: Project[]; users: User[]; activities: Activity[]; trend: { date: string; label: string; created: number; completed: number }[] };

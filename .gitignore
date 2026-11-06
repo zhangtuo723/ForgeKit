@@ -56,6 +56,10 @@ temp/
 # React
 .eslintcache
 *.tsbuildinfo
+data/
+artifacts/
+.next-dev/
+.next-studio-qa/
 
 # 小程序（如微信）
 miniprogram_npm/
