@@ -125,7 +125,7 @@ curl http://127.0.0.1:3000/api/studio/scripts \
 
 成功返回 `{ "data": ... }`，错误返回 `{ "error": "..." }`；文件和 OpenAPI 返回原始内容。使用 `/api/studio/openapi` 获取完整接口定义，也可以在页面下载。认证头为 `Authorization: Bearer YOUR_API_KEY`，Agent 无需网页 Cookie 或 Origin。
 
-本地地址只能供本机程序调用。外部 Agent 要从互联网调用，需要部署此 Next.js 应用，并将示例地址替换为实际 HTTPS 域名。仅安装 MySQL 不会发布 HTTP API。
+本地地址只能供本机程序调用。外部 Agent 可使用已部署的 `https://forgekit.cn/api/studio/*`，并携带在工作室中创建的 API Key。接口定义位于 `https://forgekit.cn/api/studio/openapi`。
 
 ## 构建与部署
 
@@ -137,7 +137,22 @@ npm start
 
 在 Linux 服务器上安装依赖和构建，使用 nginx HTTPS 反向代理到应用端口，设置 `FORGE_APP_URL` 为公开 HTTPS 来源，例如 `https://forgekit.cn`，不附加 `/studio` 或 `/api/studio`。nginx 上传限制至少设为 `client_max_body_size 12m;`，否则大图会被代理拒绝。
 
-现有云服务器上的旧网站尚未被这套管理系统替换。发布新应用时保留独立 MySQL 数据，在服务器配置同一组 COS 桶、地域、对象前缀及服务端凭证，即可读取已上传的人物图片。
+2026-11-06 已替换线上旧站，登录入口为 [https://forgekit.cn/studio/login](https://forgekit.cn/studio/login)。本次部署的应用代码版本为 `bad281e051792bacbbfbf612100b061759b40eb7`，沿用独立 MySQL 数据库和已有 COS 图片；未备份旧站。
+
+- 代码在 `/opt/forgekit/releases/<commit>/`，使用 Linux 上构建的 Next.js standalone 产物，并复制 `.next/static`（如有 `public` 也需复制）到 standalone 目录。
+- PM2 应用名为 `forgekit`，配置在 `/etc/forgekit/ecosystem.config.cjs`；Node 通过 `--env-file=/etc/forgekit/studio.env` 加载生产环境变量，监听 `127.0.0.1:3001`。PM2 已保存进程列表，并启用开机恢复。
+- nginx 使用 `/etc/nginx/conf.d/forgekit.conf`，通过现有 HTTPS 证书代理到应用，上传限制为 `12m`。
+- 生产配置文件权限为 `600`，父目录权限为 `700`。COS 配置经临时公钥加密传输后在服务器解密；MySQL 密码读取服务器已有凭证，连接地址使用 `127.0.0.1:3306`。本地 SSH 隧道参数和 Windows 路径不写入生产配置，登录密码仅以哈希保存在数据库中。
+- 数据目录为 `/var/lib/forgekit`，应用日志位于 `/var/log/forgekit`。服务器配置了 2 GiB swap；构建时 Node 堆上限为 768 MiB，运行时为 384 MiB。
+
+修改服务器环境变量后重启应用；修改 nginx 配置时先验证再重载。当前 nginx 由独立进程运行，使用其信号重载命令：
+
+```bash
+pm2 restart forgekit
+nginx -t && nginx -s reload
+```
+
+部署验证已覆盖 HTTPS 登录、Cookie 安全属性、已有 COS 图片读取、Agent API 文档、前端静态资源及超过 1 MiB 请求通过 nginx 上传限制。健康检查地址为 `https://forgekit.cn/api/studio/health`，用于检查 MySQL 连通性。
 
 ## 检查与迁移
 
