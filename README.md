@@ -138,6 +138,20 @@ curl http://127.0.0.1:3000/api/studio/scripts \
 
 本地地址只能供本机程序调用。外部 Agent 可使用已部署的 `https://forgekit.cn/api/studio/*`，并携带在工作室中创建的 API Key。接口定义位于 `https://forgekit.cn/api/studio/openapi`。
 
+### Agent 接入 Skill
+
+仓库的 [`skills/forge-studio-api/`](skills/forge-studio-api/SKILL.md) 保存面向外部 Agent 分发的接入 skill，随附 [`forge_studio.py`](skills/forge-studio-api/scripts/forge_studio.py) 命令行脚本，覆盖剧本、人物、图片及导入导出操作。脚本要求 Python 3.10+，只用标准库；地址固定为 `https://forgekit.cn/api/studio`，仅从调用进程环境读取 `FORGE_API_KEY`，无需地址配置或额外依赖。
+
+使用方将整个 `forge-studio-api` 文件夹安装到自己所用 Agent 的 skill 目录。例如，Codex 的项目级安装位置是**使用方项目**中的 `.agents/skills/forge-studio-api/`，参见[官方 skill 目录说明](https://learn.chatgpt.com/docs/build-skills#where-codex-loads-local-skills)。本仓库的 `skills/` 是分发源目录，不是开发本仓库时自动加载 skill 的目录。
+
+安装并在调用进程环境中配置 `FORGE_API_KEY` 后，即可让 Agent 执行：`使用 $forge-studio-api 列出幕间 Studio 的剧本`。Agent 会调用随附脚本；也可以在本仓库直接执行：
+
+```bash
+python skills/forge-studio-api/scripts/forge_studio.py scripts list
+```
+
+脚本不读取服务端 `.env.local`，也不接受命令行密钥参数。剧本更新必须显式传入读取到的 `--revision`，409 冲突会直接返回；写入不会自动重试。离线测试使用本地模拟 HTTP 服务和合成密钥，运行 `python -B -m unittest discover -s skills/forge-studio-api/scripts -p test_forge_studio.py`，不连接正式工作室。
+
 ## 构建与部署
 
 ```bash
