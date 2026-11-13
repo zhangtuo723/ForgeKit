@@ -164,7 +164,9 @@ npm start
 
 在 Linux 服务器上安装依赖和构建，使用 nginx HTTPS 反向代理到应用端口，设置 `FORGE_APP_URL` 为公开 HTTPS 来源，例如 `https://forgekit.cn`，不附加 `/studio` 或 `/api/studio`。nginx 上传限制至少设为 `client_max_body_size 12m;`，否则大图会被代理拒绝。
 
-2026-11-07 已部署 DDS 滨水交互简历，入口为 [https://forgekit.cn/resume](https://forgekit.cn/resume)。当前应用代码版本为 `442d6ff8a537c29761887a11d09f79fdbd90704e`；剧本工作室继续使用 [https://forgekit.cn/studio/login](https://forgekit.cn/studio/login)，沿用独立 MySQL、已有 COS 图片和服务器生产环境配置。2026-11-06 替换旧站时未备份旧站。
+2026-11-07 已部署 DDS 滨水交互简历，入口为 [https://forgekit.cn/resume](https://forgekit.cn/resume)，当时部署的代码版本为 `442d6ff8a537c29761887a11d09f79fdbd90704e`。2026-11-06 替换旧站时未备份旧站。
+
+2026-11-14 已部署剧本、人物、人物资产库及人物档案图片的服务端分页和检索，当前应用代码版本为 `e4ff2ac6bad5f2bf245a05c4d7a2ae0b3bacf2de`，OpenAPI 为 1.2.0。入口为 [工作室](https://forgekit.cn/studio/login) 和 [人物资产库](https://forgekit.cn/studio/assets)。继续使用现有 MySQL、COS 图片和生产环境配置，无需数据迁移。上线验证覆盖分页、组合检索、统计总数、已有图片读取、登录及简历静态资源。
 
 - 代码在 `/opt/forgekit/releases/<commit>/`，使用 Linux 上构建的 Next.js standalone 产物，并复制 `.next/static`（如有 `public` 也需复制）到 standalone 目录。
 - PM2 应用名为 `forgekit`，配置在 `/etc/forgekit/ecosystem.config.cjs`；Node 通过 `--env-file=/etc/forgekit/studio.env` 加载生产环境变量，监听 `127.0.0.1:3001`。PM2 已保存进程列表，并启用开机恢复。
@@ -172,6 +174,10 @@ npm start
 - nginx 使用 `/etc/nginx/conf.d/forgekit.conf`，通过现有 HTTPS 证书代理到应用，上传限制为 `12m`。
 - 生产配置文件权限为 `600`，父目录权限为 `700`。COS 配置经临时公钥加密传输后在服务器解密；MySQL 密码读取服务器已有凭证，连接地址使用 `127.0.0.1:3306`。本地 SSH 隧道参数和 Windows 路径不写入生产配置，登录密码仅以哈希保存在数据库中。
 - 数据目录为 `/var/lib/forgekit`，应用日志位于 `/var/log/forgekit`。服务器配置了 2 GiB swap；构建时 Node 堆上限为 768 MiB，运行时为 384 MiB。
+
+部署通道使用阿里云 Workbench CLI：通过已有 RAM 凭据调用 `workbench exec` 和 `workbench upload`，以 `root` 在实例中执行命令。操作者的凭据配置位于 `~/.workbench/config.json`，属于本机配置，不提交到仓库；它是 AK/SK 配置，不是 SSH 私钥。数据库隧道账号 `forge_tunnel` 仅用于端口转发，不能执行部署命令。
+
+上传 Git 源码归档并校验 SHA-256 后，在新 release 目录安装依赖和构建，沿用服务器上的 `/etc/forgekit/studio.env`。先在回环地址的临时端口验证候选服务，再切换正式 PM2 进程；验证完成后清理候选进程并执行 `pm2 save`。保留前一个 release 和切换前的 PM2 配置，以便按相同流程回退。
 
 修改服务器环境变量后重启应用；修改 nginx 配置时先验证再重载。当前 nginx 由独立进程运行，使用其信号重载命令：
 
