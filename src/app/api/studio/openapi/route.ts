@@ -19,23 +19,36 @@ const scriptInput={type:"object",properties:{title:string(120),synopsis:string(2
 const characterInput={type:"object",properties:{scriptId:nullableId,name:string(80),role:string(40),description:string(2000),appearance:string(2000),personality:string(2000),coverAssetId:{...nullableId,description:"Must reference an asset owned by this character; null clears the cover."}}};
 const operation=(operationId:string,summary:string,schema:unknown,extra:Record<string,unknown>={})=>({operationId,summary,responses:{"200":response(wrapped(schema)),...errors},...extra});
 const create=(operationId:string,summary:string,schema:unknown,input:unknown,type="application/json")=>operation(operationId,summary,schema,{requestBody:body(input,type),responses:{"201":response(wrapped(schema),"Created"),...errors}});
+const pageParameters = [
+  { name: "page", in: "query", schema: { type: "integer", minimum: 1, maximum: 1000000, default: 1 } },
+  { name: "pageSize", in: "query", schema: { type: "integer", minimum: 1, maximum: 100, default: 12 } },
+  { name: "q", in: "query", description: "Case-insensitive literal substring search; %, _ and ! are ordinary characters.", schema: string(200) },
+];
+const pagedOperation = (operationId: string, summary: string, name: string, parameters: unknown[]) => operation(operationId, summary, collection(name), {
+  parameters: [...pageParameters, ...parameters],
+  responses: { "200": response({ type: "object", required: ["data", "pagination"], properties: {
+    data: collection(name), pagination: { type: "object", required: ["page", "pageSize", "total", "totalPages"], description: "page is clamped to the last available page; empty results have page=totalPages=1.", properties: {
+      page: { type: "integer", minimum: 1 }, pageSize: { type: "integer", minimum: 1, maximum: 100 }, total: { type: "integer", minimum: 0 }, totalPages: { type: "integer", minimum: 1 },
+    } },
+  } }), ...errors },
+});
 
 export async function GET(request:Request) {
   return handle(request, async () =>{
     const spec={
       openapi:"3.0.3",
-      info:{title:"幕间 Studio Agent API",version:"1.0.0",description:"Authenticate external agents with Authorization: Bearer <API_KEY>. Create and revoke keys from the logged-in Integrations page. Read keys allow GET; write keys allow GET/POST/PATCH/DELETE. Browser-cookie writes require the matching Origin header. Bearer requests do not require Origin. Scripts lists omit content (empty string); fetch the individual script before editing. Script PATCH requires its current revision and returns 409 on conflict. Keys cannot administer other keys. Image files are private; access through the authenticated file endpoint. No sample scripts or characters are seeded."},
+      info:{title:"幕间 Studio Agent API",version:"1.1.0",description:"Authenticate external agents with Authorization: Bearer <API_KEY>. Create and revoke keys from the logged-in Integrations page. Read keys allow GET; write keys allow GET/POST/PATCH/DELETE. Browser-cookie writes require the matching Origin header. Bearer requests do not require Origin. Script and character lists support page (default 1), pageSize (default 12, max 100), and q; responses include data and pagination. Scripts lists omit content (empty string); fetch the individual script before editing. Script PATCH requires its current revision and returns 409 on conflict. Keys cannot administer other keys. Image files are private; access through the authenticated file endpoint. No sample scripts or characters are seeded."},
       servers:[{url:process.env.FORGE_APP_URL?new URL(process.env.FORGE_APP_URL).origin:new URL(request.url).origin}],
       security:[{bearerAuth:[]},{cookieAuth:[]}],
       paths:{
         "/api/studio/scripts":{
-          get:operation("listScripts","List scripts (content is empty; fetch detail to edit)",collection("Script")),
+          get:pagedOperation("listScripts","Search title, genre or synopsis; paginated scripts omit content", "Script", [{ name: "status", in: "query", schema: scriptInput.properties.status }]),
           post:create("createScript","Create a script",ref("Script"),{...scriptInput,required:["title"]})
         },
         "/api/studio/scripts/{id}":{parameters:[pathId],get:operation("getScript","Read script including full content",ref("Script")),patch:operation("updateScript","Save a script with optimistic revision locking",ref("Script"),{requestBody:body({...scriptInput,required:["revision"],properties:{...scriptInput.properties,revision:{type:"integer",minimum:1,description:"Revision from the latest GET; required for every update."}}})}),delete:{operationId:"deleteScript",summary:"Delete script; characters and images remain with scriptId null",responses:{"200":response(ok),...errors}}},
         "/api/studio/scripts/import":{post:create("importScript","Import TXT / Markdown as a new script",ref("Script"),{type:"object",required:["file"],properties:{file:{type:"string",format:"binary",description:".txt, .md, .markdown; at most 2 MiB; UTF-8 or GB18030; at most 200000 characters"},title:string(120)}},"multipart/form-data")},
         "/api/studio/scripts/{id}/export":{parameters:[pathId],get:{operationId:"exportScript",summary:"Download current script content",parameters:[{name:"format",in:"query",schema:{type:"string",enum:["txt","md"],default:"txt"}}],responses:{"200":{description:"UTF-8 attachment",content:{"text/plain":{schema:string()},"text/markdown":{schema:string()}}},...errors}}},
-        "/api/studio/characters":{get:operation("listCharacters","List characters",collection("Character"),{parameters:[queryId("scriptId")]}),post:create("createCharacter","Create a character",ref("Character"),{...characterInput,required:["name"],description:"New characters must omit coverAssetId or set it null; upload images after creation."})},
+        "/api/studio/characters":{get:pagedOperation("listCharacters","Search name, role, description or script title; paginated characters", "Character", [{ name: "scriptId", in: "query", schema: string(64), description: "Filter by script UUID; unlinked selects characters without a script." }]),post:create("createCharacter","Create a character",ref("Character"),{...characterInput,required:["name"],description:"New characters must omit coverAssetId or set it null; upload images after creation."})},
         "/api/studio/characters/{id}":{parameters:[pathId],get:operation("getCharacter","Read character profile",ref("Character")),patch:operation("updateCharacter","Update character profile, script association or cover",ref("Character"),{requestBody:body(characterInput)}),delete:{operationId:"deleteCharacter",summary:"Delete character and all associated images permanently",responses:{"200":response(ok),...errors}}},
         "/api/studio/assets":{get:operation("listAssets","List character asset images",collection("Asset"),{parameters:[queryId("characterId"),queryId("scriptId")]}),post:create("uploadAsset","Upload an image for an existing character",ref("Asset"),{type:"object",required:["file","characterId"],properties:{file:{type:"string",format:"binary",description:"Static PNG, JPEG, or WebP; at most 10 MiB / 25 million pixels. Stored as WebP with metadata removed."},characterId:id,name:string(120)}},"multipart/form-data")},
         "/api/studio/assets/{id}":{parameters:[pathId],get:operation("getAsset","Read image metadata",ref("Asset")),patch:operation("renameAsset","Rename an image",ref("Asset"),{requestBody:body({type:"object",required:["name"],properties:{name:string(120)}})}),delete:{operationId:"deleteAsset",summary:"Delete image; if it was the cover, choose another available image",responses:{"200":response(ok),...errors}}},

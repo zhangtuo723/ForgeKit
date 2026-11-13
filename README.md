@@ -134,6 +134,8 @@ curl http://127.0.0.1:3000/api/studio/scripts \
 
 更新剧本前先 GET `/api/studio/scripts/{id}`，再将返回的 `revision` 随 PATCH 请求提交。HTTP 409 表示版本冲突，需重新读取、合并后提交，不能盲目覆盖。
 
+剧本和人物列表使用服务端分页与检索：`page` 默认 1，`pageSize` 默认 12、最大 100，`q` 是最长 200 字符的关键词。剧本搜索标题、类型和梗概，可组合 `status`；人物搜索名称、定位、小传和所属剧本，可组合 `scriptId`（`unlinked` 表示独立人物）。`%`、`_` 和 `!` 按普通字符匹配。返回 `{ "data": [...], "pagination": { "page": 1, "pageSize": 12, "total": 37, "totalPages": 4 } }`，超出末页时回到末页，空结果的页码和总页数均为 1。调用方需要显式翻页，不能把第一页当作完整列表。网页搜索切换条件后回到第一页，支持每页 12 / 24 / 48 条；关联剧本、上传人物等选择器也使用按需分页检索。
+
 成功返回 `{ "data": ... }`，错误返回 `{ "error": "..." }`；文件和 OpenAPI 返回原始内容。使用 `/api/studio/openapi` 获取完整接口定义，也可以在页面下载。认证头为 `Authorization: Bearer YOUR_API_KEY`，Agent 无需网页 Cookie 或 Origin。
 
 本地地址只能供本机程序调用。外部 Agent 可使用已部署的 `https://forgekit.cn/api/studio/*`，并携带在工作室中创建的 API Key。接口定义位于 `https://forgekit.cn/api/studio/openapi`。
@@ -192,6 +194,8 @@ npm run build
 `npm run cos:check` 会上传一个随机名称的无敏感内容临时文件，检查签名读取、匿名访问被拒绝及删除结果，随后清理本次测试对象；它不会更改桶的权限或其他对象。
 
 集成测试必须使用 `forge_studio_test` 和独立 COS 前缀 `forge-studio/_qa/<run>/`，不能指向正式数据库或正式图片前缀。应用进程和测试进程使用同一个本次测试专用前缀。两个 PowerShell 终端示例（每次运行更换 `20261106-001`）：
+
+启动测试开发服务前，先停止同一 checkout 中其他 `next dev` 服务，避免多个开发服务的热更新相互干扰。需要同时保留日常开发站时，可以使用独立 checkout，或用生产构建运行隔离测试服务。
 
 ```powershell
 # 终端一：覆盖 .env.local 中的正式数据库

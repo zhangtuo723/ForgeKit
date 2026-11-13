@@ -24,8 +24,8 @@ async function createKey(name,permission="write") {
   const result=await expect("/api/studio/agent-keys",201,{method:"POST",token:"",session:cookie,origin:base.origin,data:{name:`${prefix}-${name}`,permission,expiresInDays:30}});
   const value=result.body.data;keys.add(value.key.id);assert.match(value.token,/^fg_agent_[a-f0-9]{64}$/);assert.ok(!("tokenHash" in value.key));return value;
 }
-async function newScript(title,content="第一场\n夜。街道。\n人物：你好。"){
-  const record=(await expect("/api/studio/scripts",201,{method:"POST",data:{title:`${prefix}-${title}`,content}})).body.data;scripts.add(record.id);return record;
+async function newScript(title,content="第一场\n夜。街道。\n人物：你好。",extra={}){
+  const record=(await expect("/api/studio/scripts",201,{method:"POST",data:{title:`${prefix}-${title}`,content,...extra}})).body.data;scripts.add(record.id);return record;
 }
 async function newCharacter(scriptId,name="character"){
   const record=(await expect("/api/studio/characters",201,{method:"POST",data:{scriptId,name:`${prefix}-${name}`,appearance:"黑色风衣",personality:"谨慎",role:"主角"}})).body.data;characters.add(record.id);return record;
@@ -55,6 +55,38 @@ try {
     await expect("/api/studio/agent-keys",401);await expect("/api/studio/settings",401);
     await expect("/api/studio/agent-keys",401,{method:"POST",data:{name:"blocked",permission:"write",expiresInDays:30}});
     await expect("/api/studio/agent-keys/unknown",401,{method:"DELETE"});
+  });
+  await check("SQL pagination, stable pages, literal search, combined filters and boundary validation",async()=>{
+    const records=[];
+    for(let i=0;i<15;i++) records.push(await newScript(`paging-${i.toString().padStart(2,"0")}`,"分页正文",{status:i%2?"创作中":"草稿",genre:i===14?"唯一类型":"剧情",synopsis:i===13?"唯一梗概":""}));
+    // Same timestamps exercise the ID tie-breaker rather than relying on insertion timing.
+    await qa.db.execute(`UPDATE studio_scripts SET updatedAt=? WHERE id IN (${records.map(()=>"?").join(",")})`,["2026-01-01T00:00:00.000Z",...records.map(x=>x.id)]);
+    const query=new URLSearchParams({q:`${prefix}-paging-`,pageSize:"5"});
+    const seen=[];
+    for(let page=1;page<=3;page++) {
+      query.set("page",String(page));const body=(await expect(`/api/studio/scripts?${query}`,200)).body;
+      assert.deepEqual(body.pagination,{page,pageSize:5,total:15,totalPages:3});assert.equal(body.data.length,5);
+      assert.ok(body.data.every(item=>item.content===""));seen.push(...body.data.map(item=>item.id));
+    }
+    assert.equal(new Set(seen).size,15);assert.deepEqual(new Set(seen),new Set(records.map(item=>item.id)));
+    query.set("page","999999");assert.equal((await expect(`/api/studio/scripts?${query}`,200)).body.pagination.page,3);
+    query.set("page","1");query.set("status","创作中");
+    const writing=(await expect(`/api/studio/scripts?${query}`,200)).body;assert.equal(writing.pagination.total,7);assert.ok(writing.data.every(item=>item.status==="创作中"));
+    for(const keyword of ["唯一类型","唯一梗概"])assert.equal((await expect(`/api/studio/scripts?q=${encodeURIComponent(keyword)}`,200)).body.pagination.total,1);
+    const literal=await newScript("literal-%_!");await newScript("literal-abcX!");
+    const escaped=(await expect(`/api/studio/scripts?q=${encodeURIComponent(`${prefix}-literal-%_!`)}`,200)).body;
+    assert.equal(escaped.pagination.total,1);assert.equal(escaped.data[0].id,literal.id);
+    for(let i=0;i<5;i++)await newCharacter(i<4?records[0].id:null,`paging-林雾${i}`);
+    const peopleQuery=new URLSearchParams({q:`${prefix}-paging-林雾`,page:"2",pageSize:"2",scriptId:records[0].id});
+    const people=(await expect(`/api/studio/characters?${peopleQuery}`,200)).body;
+    assert.deepEqual(people.pagination,{page:2,pageSize:2,total:4,totalPages:2});assert.equal(people.data.length,2);assert.ok(people.data.every(item=>item.name.includes("林雾")&&item.scriptId===records[0].id));
+    peopleQuery.set("scriptId","unlinked");const independent=(await expect(`/api/studio/characters?${peopleQuery}`,200)).body;assert.equal(independent.pagination.total,1);assert.equal(independent.data[0].scriptId,null);
+    for(const resource of ["scripts","characters"]) {
+      const first=(await expect(`/api/studio/${resource}`,200)).body;assert.equal(first.pagination.pageSize,12);assert.ok(first.data.length<=12);
+      const empty=(await expect(`/api/studio/${resource}?q=${encodeURIComponent(`${prefix}-not-found-' OR 1=1 --`)}`,200)).body;assert.deepEqual(empty.pagination,{page:1,pageSize:12,total:0,totalPages:1});assert.deepEqual(empty.data,[]);
+      for(const invalid of ["page=0","page=-1","page=1.2","page=oops","pageSize=0","pageSize=101","pageSize=1e2","page=1000001"])await expect(`/api/studio/${resource}?${invalid}`,400);
+    }
+    await expect("/api/studio/scripts?status=unknown",400);
   });
   let script;
   await check("script create/read, large text, preserved whitespace and revision conflicts",async()=>{
@@ -150,8 +182,10 @@ try {
   });
   await check("overview counts, filtered lists, Agent attribution and OpenAPI schema",async()=>{
     const overview=(await expect("/api/studio/overview",200)).body.data;
-    const allScripts=(await expect("/api/studio/scripts",200)).body.data,allCharacters=(await expect("/api/studio/characters",200)).body.data,allAssets=(await expect("/api/studio/assets",200)).body.data;
-    assert.equal(overview.stats.scripts,allScripts.length);assert.equal(overview.stats.characters,allCharacters.length);assert.equal(overview.stats.assets,allAssets.length);assert.equal(overview.stats.words,allScripts.reduce((sum,s)=>sum+s.wordCount,0));
+    const allScripts=(await expect("/api/studio/scripts",200)).body,allCharacters=(await expect("/api/studio/characters",200)).body,allAssets=(await expect("/api/studio/assets",200)).body.data;
+    assert.equal(overview.stats.scripts,allScripts.pagination.total);assert.equal(overview.stats.characters,allCharacters.pagination.total);assert.equal(overview.stats.assets,allAssets.length);
+    assert.ok(overview.recentScripts.length<=6);assert.ok(overview.recentAssets.length<=8);
+    const [wordCount]=await qa.db.execute("SELECT SUM(wordCount) AS n FROM studio_scripts");assert.equal(overview.stats.words,Number(wordCount[0].n));
     const activities=(await expect("/api/studio/activities",200)).body.data;assert.ok(activities.some(a=>a.actor===`Agent · ${prefix}-writer`&&a.target.includes(prefix)));
     const doc=(await expect("/api/studio/openapi",200,{token:readToken})).body;assert.equal(doc.openapi,"3.0.3");assert.ok(doc.paths["/api/studio/scripts/{id}"].patch.requestBody);assert.ok(doc.paths["/api/studio/assets/{id}/file"]);assert.ok(doc.components.securitySchemes.bearerAuth);
     assert.ok(doc.paths["/api/studio/overview"]);assert.ok(doc.paths["/api/studio/activities"]);

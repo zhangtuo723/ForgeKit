@@ -25,6 +25,8 @@ description: 通过 Agent API 连接 ForgeKit 幕间 Studio，查询或编辑剧
 python scripts/forge_studio.py --help
 python scripts/forge_studio.py overview
 python scripts/forge_studio.py scripts list
+python scripts/forge_studio.py scripts list --query 雨夜 --page 1 --page-size 12
+python scripts/forge_studio.py characters list --query 林雾
 python scripts/forge_studio.py scripts get SCRIPT_ID
 python scripts/forge_studio.py scripts update SCRIPT_ID --revision 7 --content-file draft.md
 ```
@@ -33,13 +35,13 @@ python scripts/forge_studio.py scripts update SCRIPT_ID --revision 7 --content-f
 
 | 目标 | CLI 子命令与参数 |
 | --- | --- |
-| 剧本列表 / 详情 | `scripts list` / `scripts get SCRIPT_ID` |
+| 剧本列表 / 详情 | `scripts list [--query 关键词] [--status 创作中] [--page N] [--page-size 12]` / `scripts get SCRIPT_ID` |
 | 新建剧本 | `scripts create --title 标题 --content-file story.md`，或 `--json-file script.json` |
 | 更新剧本 | `scripts update SCRIPT_ID --revision N --content-file draft.md`，也支持 `--title`、`--synopsis`、`--genre`、`--status` 或 `--json-file patch.json` |
 | 删除剧本 | `scripts delete SCRIPT_ID` |
 | 导入新剧本 | `scripts import story.md`，可选 `--title 标题` |
 | 导出正文 | `scripts export SCRIPT_ID --format md --output story.md` |
-| 人物列表 / 详情 | `characters list [--script-id SCRIPT_ID]` / `characters get CHARACTER_ID` |
+| 人物列表 / 详情 | `characters list [--query 人物名称] [--script-id SCRIPT_ID或unlinked] [--page N] [--page-size 12]` / `characters get CHARACTER_ID` |
 | 新建 / 更新人物 | `characters create --json-file character.json` / `characters update CHARACTER_ID --json-file patch.json` |
 | 删除人物 | `characters delete CHARACTER_ID` |
 | 图片列表 / 信息 | `assets list [--character-id CHARACTER_ID] [--script-id SCRIPT_ID]` / `assets get ASSET_ID` |
@@ -52,7 +54,9 @@ CLI 成功退出码为 0，stdout 保留 API 的 `{"data": ...}` 包装；OpenAP
 
 ## 定位与读取
 
-从列表响应获取真实 ID。剧本列表目前不提供服务端搜索参数，在返回列表中匹配标题；同名对象无法唯一定位时，请用户明确目标。列表里的剧本 `content` 是空字符串，不能当作真实正文；读取或编辑正文必须 GET `/scripts/{id}`。
+剧本和人物列表默认每页 12 条，最大 100 条；响应除 `data` 数组外还包含 `pagination: {page, pageSize, total, totalPages}`。用 `--query` 在服务端检索：剧本搜索标题、类型和梗概，人物搜索名称、定位、小传和所属剧本；`--status` 和 `--script-id` 可与关键词组合。关键词中的 `%`、`_`、`!` 按普通字符匹配。若 `pagination.page < pagination.totalPages`，需要时显式读取后续页，不要把第一页当作完整列表。空结果为第 1 页，超出末页的请求会回到末页。
+
+从检索响应获取真实 ID；同名对象无法唯一定位时，请用户明确目标。列表里的剧本 `content` 是空字符串，不能当作真实正文；读取或编辑正文必须 GET `/scripts/{id}`。
 
 ## 编辑剧本
 

@@ -1,10 +1,14 @@
-export async function api<T>(url: string, options: RequestInit = {}): Promise<T> {
+import type { PageResult } from "./studio-types";
+
+async function request(url: string, options: RequestInit = {}) {
   const response = await fetch(url, { ...options, headers: { "Content-Type": "application/json", ...options.headers }, cache: "no-store" });
   const body = await response.json().catch(() => ({ error: "服务响应异常，请稍后重试" }));
   if (response.status === 401 && !url.includes("/auth/login")) { window.location.href = "/studio/login"; }
   if (!response.ok) throw new Error(body.error || "操作失败，请稍后重试");
-  return body.data as T;
+  return body;
 }
+export async function api<T>(url: string, options: RequestInit = {}): Promise<T> { return (await request(url, options)).data as T; }
+export async function apiPage<T>(url: string, options: RequestInit = {}): Promise<PageResult<T>> { return request(url, options); }
 
 export function formatDate(value: string) {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value.slice(5).replace("-", "/");

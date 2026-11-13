@@ -14,6 +14,7 @@ import tempfile
 import threading
 import unittest
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
 import forge_studio as cli
 
@@ -49,7 +50,12 @@ class Handler(BaseHTTPRequestHandler):
             content = "第一场\n保留空格  \n".encode()
         else:
             self.send_header("Content-Type", "application/json")
-            content = json.dumps({"data": {"revision": 8, "content": "第一场\n"}}).encode()
+            result = {"data": {"revision": 8, "content": "第一场\n"}}
+            if self.command == "GET" and urlsplit(self.path).path in ("/api/studio/scripts", "/api/studio/characters"):
+                query = parse_qs(urlsplit(self.path).query)
+                page, size = int(query.get("page", [1])[0]), int(query.get("pageSize", [12])[0])
+                result = {"data": [{"id": RECORD_ID}], "pagination": {"page": page, "pageSize": size, "total": 25, "totalPages": (25 + size - 1) // size}}
+            content = json.dumps(result).encode()
         self.end_headers()
         self.wfile.write(content)
 
@@ -136,6 +142,23 @@ class CliTests(unittest.TestCase):
         self.assertEqual(method, "PATCH")
         self.assertEqual(headers["Content-Type"], "application/json")
         self.assertEqual(json.loads(body), {"revision": 7, "content": text})
+
+    def test_paginated_search_parameters_and_status(self):
+        code, out, err = self.run_cli("scripts", "list", "--page", "2", "--page-size", "24", "--query", "雨夜 %_!", "--status", "创作中")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["pagination"], {"page": 2, "pageSize": 24, "total": 25, "totalPages": 2})
+        self.assertEqual(parse_qs(urlsplit(self.server.calls[-1][1]).query), {
+            "page": ["2"], "pageSize": ["24"], "q": ["雨夜 %_!"], "status": ["创作中"]
+        })
+        code, _, err = self.run_cli("characters", "list", "--query", "林雾", "--script-id", "unlinked")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(parse_qs(urlsplit(self.server.calls[-1][1]).query), {
+            "page": ["1"], "pageSize": ["12"], "q": ["林雾"], "scriptId": ["unlinked"]
+        })
+        before = len(self.server.calls)
+        code, _, _ = self.run_cli("scripts", "list", "--page-size", "101")
+        self.assertEqual(code, 1)
+        self.assertEqual(len(self.server.calls), before)
 
     def test_conflict_is_reported_once_and_draft_survives(self):
         self.server.status = 409

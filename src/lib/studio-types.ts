@@ -1,4 +1,6 @@
 export type ScriptStatus = "草稿" | "创作中" | "已定稿" | "已归档";
+export type Pagination = { page: number; pageSize: number; total: number; totalPages: number };
+export type PageResult<T> = { data: T[]; pagination: Pagination };
 export type Script = {
   id: string; title: string; synopsis: string; genre: string; status: ScriptStatus;
   content: string; wordCount: number; revision: number; sourceName: string | null;
