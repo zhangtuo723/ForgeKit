@@ -51,7 +51,7 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self.send_header("Content-Type", "application/json")
             result = {"data": {"revision": 8, "content": "第一场\n"}}
-            if self.command == "GET" and urlsplit(self.path).path in ("/api/studio/scripts", "/api/studio/characters"):
+            if self.command == "GET" and urlsplit(self.path).path in ("/api/studio/scripts", "/api/studio/characters", "/api/studio/assets"):
                 query = parse_qs(urlsplit(self.path).query)
                 page, size = int(query.get("page", [1])[0]), int(query.get("pageSize", [12])[0])
                 result = {"data": [{"id": RECORD_ID}], "pagination": {"page": page, "pageSize": size, "total": 25, "totalPages": (25 + size - 1) // size}}
@@ -154,6 +154,12 @@ class CliTests(unittest.TestCase):
         self.assertEqual(code, 0, err)
         self.assertEqual(parse_qs(urlsplit(self.server.calls[-1][1]).query), {
             "page": ["1"], "pageSize": ["12"], "q": ["林雾"], "scriptId": ["unlinked"]
+        })
+        code, out, err = self.run_cli("assets", "list", "--query", "参考图", "--page", "2", "--page-size", "24", "--character-id", RECORD_ID, "--script-id", "unlinked")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(json.loads(out)["pagination"]["page"], 2)
+        self.assertEqual(parse_qs(urlsplit(self.server.calls[-1][1]).query), {
+            "page": ["2"], "pageSize": ["24"], "q": ["参考图"], "characterId": [RECORD_ID], "scriptId": ["unlinked"]
         })
         before = len(self.server.calls)
         code, _, _ = self.run_cli("scripts", "list", "--page-size", "101")

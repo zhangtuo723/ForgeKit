@@ -228,14 +228,13 @@ def build_parser():
         group = commands.add_parser(resource)
         actions = group.add_subparsers(dest="action", required=True)
         listing = actions.add_parser("list")
-        if resource in ("scripts", "characters"):
-            listing.add_argument("--page", type=positive_int, default=1)
-            listing.add_argument("--page-size", type=positive_int, default=12, help="每页 1–100 条，默认 12")
-            listing.add_argument("--query", help="服务端检索关键词")
+        listing.add_argument("--page", type=positive_int, default=1)
+        listing.add_argument("--page-size", type=positive_int, default=12, help="每页 1–100 条，默认 12")
+        listing.add_argument("--query", help="服务端检索关键词")
         if resource == "scripts":
             listing.add_argument("--status", choices=["草稿", "创作中", "已定稿", "已归档"])
         if resource != "scripts":
-            listing.add_argument("--script-id", help="剧本 UUID；unlinked 表示独立人物" if resource == "characters" else "剧本 UUID", type=(lambda value: value if value == "unlinked" else identifier(value)) if resource == "characters" else identifier)
+            listing.add_argument("--script-id", help="剧本 UUID；unlinked 表示独立人物", type=lambda value: value if value == "unlinked" else identifier(value))
         if resource == "assets":
             listing.add_argument("--character-id", type=identifier)
         for action in ("get", "delete"):
@@ -287,14 +286,13 @@ def execute(args):
     action = args.action
     if action == "list":
         query = {}
-        if args.resource in ("scripts", "characters"):
-            if args.page_size > 100:
-                raise CliError("每页数量不能超过 100。")
-            query.update({"page": args.page, "pageSize": args.page_size})
-            if args.query:
-                query["q"] = args.query
-            if getattr(args, "status", None):
-                query["status"] = args.status
+        if args.page_size > 100:
+            raise CliError("每页数量不能超过 100。")
+        query.update({"page": args.page, "pageSize": args.page_size})
+        if args.query:
+            query["q"] = args.query
+        if getattr(args, "status", None):
+            query["status"] = args.status
         for option, field in (("script_id", "scriptId"), ("character_id", "characterId")):
             value = getattr(args, option, None)
             if value:

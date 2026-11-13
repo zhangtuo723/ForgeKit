@@ -81,7 +81,26 @@ try {
     const people=(await expect(`/api/studio/characters?${peopleQuery}`,200)).body;
     assert.deepEqual(people.pagination,{page:2,pageSize:2,total:4,totalPages:2});assert.equal(people.data.length,2);assert.ok(people.data.every(item=>item.name.includes("林雾")&&item.scriptId===records[0].id));
     peopleQuery.set("scriptId","unlinked");const independent=(await expect(`/api/studio/characters?${peopleQuery}`,200)).body;assert.equal(independent.pagination.total,1);assert.equal(independent.data[0].scriptId,null);
-    for(const resource of ["scripts","characters"]) {
+    const assetOwner=await newCharacter(records[0].id,"asset-paging");
+    const assetRecords=[];
+    for(let i=0;i<15;i++)assetRecords.push(await imageUpload(assetOwner.id,`${prefix}-asset-paging-${i===0?"%_!":i===1?"abcX!":String(i)}.png`));
+    const imageQuery=new URLSearchParams({characterId:assetOwner.id,scriptId:records[0].id,pageSize:"5"});
+    const imageIds=[];
+    for(let page=1;page<=3;page++) {
+      imageQuery.set("page",String(page));const body=(await expect(`/api/studio/assets?${imageQuery}`,200)).body;
+      assert.deepEqual(body.pagination,{page,pageSize:5,total:15,totalPages:3});assert.equal(body.data.length,5);
+      assert.deepEqual(body.summary,{characters:1,bytes:assetRecords.reduce((sum,asset)=>sum+asset.size,0)});
+      imageIds.push(...body.data.map(asset=>asset.id));
+    }
+    assert.equal(new Set(imageIds).size,15);assert.deepEqual(new Set(imageIds),new Set(assetRecords.map(asset=>asset.id)));
+    imageQuery.set("q",`${prefix}-asset-paging-%_!`);
+    const literalImage=(await expect(`/api/studio/assets?${imageQuery}`,200)).body;
+    assert.equal(literalImage.pagination.total,1);assert.equal(literalImage.data[0].id,assetRecords[0].id);
+    imageQuery.delete("q");imageQuery.set("scriptId","unlinked");
+    assert.equal((await expect(`/api/studio/assets?${imageQuery}`,200)).body.pagination.total,0);
+    await expect(`/api/studio/characters/${assetOwner.id}`,200,{method:"PATCH",data:{scriptId:null}});
+    assert.equal((await expect(`/api/studio/assets?${imageQuery}`,200)).body.pagination.total,15);
+    for(const resource of ["scripts","characters","assets"]) {
       const first=(await expect(`/api/studio/${resource}`,200)).body;assert.equal(first.pagination.pageSize,12);assert.ok(first.data.length<=12);
       const empty=(await expect(`/api/studio/${resource}?q=${encodeURIComponent(`${prefix}-not-found-' OR 1=1 --`)}`,200)).body;assert.deepEqual(empty.pagination,{page:1,pageSize:12,total:0,totalPages:1});assert.deepEqual(empty.data,[]);
       for(const invalid of ["page=0","page=-1","page=1.2","page=oops","pageSize=0","pageSize=101","pageSize=1e2","page=1000001"])await expect(`/api/studio/${resource}?${invalid}`,400);
@@ -182,8 +201,8 @@ try {
   });
   await check("overview counts, filtered lists, Agent attribution and OpenAPI schema",async()=>{
     const overview=(await expect("/api/studio/overview",200)).body.data;
-    const allScripts=(await expect("/api/studio/scripts",200)).body,allCharacters=(await expect("/api/studio/characters",200)).body,allAssets=(await expect("/api/studio/assets",200)).body.data;
-    assert.equal(overview.stats.scripts,allScripts.pagination.total);assert.equal(overview.stats.characters,allCharacters.pagination.total);assert.equal(overview.stats.assets,allAssets.length);
+    const allScripts=(await expect("/api/studio/scripts",200)).body,allCharacters=(await expect("/api/studio/characters",200)).body,allAssets=(await expect("/api/studio/assets",200)).body;
+    assert.equal(overview.stats.scripts,allScripts.pagination.total);assert.equal(overview.stats.characters,allCharacters.pagination.total);assert.equal(overview.stats.assets,allAssets.pagination.total);
     assert.ok(overview.recentScripts.length<=6);assert.ok(overview.recentAssets.length<=8);
     const [wordCount]=await qa.db.execute("SELECT SUM(wordCount) AS n FROM studio_scripts");assert.equal(overview.stats.words,Number(wordCount[0].n));
     const activities=(await expect("/api/studio/activities",200)).body.data;assert.ok(activities.some(a=>a.actor===`Agent · ${prefix}-writer`&&a.target.includes(prefix)));

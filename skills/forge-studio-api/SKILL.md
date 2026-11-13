@@ -44,7 +44,7 @@ python scripts/forge_studio.py scripts update SCRIPT_ID --revision 7 --content-f
 | 人物列表 / 详情 | `characters list [--query 人物名称] [--script-id SCRIPT_ID或unlinked] [--page N] [--page-size 12]` / `characters get CHARACTER_ID` |
 | 新建 / 更新人物 | `characters create --json-file character.json` / `characters update CHARACTER_ID --json-file patch.json` |
 | 删除人物 | `characters delete CHARACTER_ID` |
-| 图片列表 / 信息 | `assets list [--character-id CHARACTER_ID] [--script-id SCRIPT_ID]` / `assets get ASSET_ID` |
+| 图片列表 / 信息 | `assets list [--query 图片或人物名称] [--character-id CHARACTER_ID] [--script-id SCRIPT_ID或unlinked] [--page N] [--page-size 12]` / `assets get ASSET_ID` |
 | 上传 / 重命名图片 | `assets upload reference.png --character-id CHARACTER_ID [--name 名称]` / `assets rename ASSET_ID --name 名称` |
 | 下载 / 删除图片 | `assets download ASSET_ID --output reference.webp` / `assets delete ASSET_ID` |
 | 工作室统计 / 最近 100 条日志 | `overview` / `activities` |
@@ -54,7 +54,9 @@ CLI 成功退出码为 0，stdout 保留 API 的 `{"data": ...}` 包装；OpenAP
 
 ## 定位与读取
 
-剧本和人物列表默认每页 12 条，最大 100 条；响应除 `data` 数组外还包含 `pagination: {page, pageSize, total, totalPages}`。用 `--query` 在服务端检索：剧本搜索标题、类型和梗概，人物搜索名称、定位、小传和所属剧本；`--status` 和 `--script-id` 可与关键词组合。关键词中的 `%`、`_`、`!` 按普通字符匹配。若 `pagination.page < pagination.totalPages`，需要时显式读取后续页，不要把第一页当作完整列表。空结果为第 1 页，超出末页的请求会回到末页。
+剧本、人物和图片资产列表默认每页 12 条，最大 100 条；响应除 `data` 数组外还包含 `pagination: {page, pageSize, total, totalPages}`。用 `--query` 在服务端检索：剧本搜索标题、类型和梗概，人物搜索名称、定位、小传和所属剧本，图片搜索名称、原始文件名、人物名称和所属剧本；`--status`、`--script-id` 和 `--character-id` 可与关键词组合。关键词中的 `%`、`_`、`!` 按普通字符匹配。若 `pagination.page < pagination.totalPages`，需要时显式读取后续页，不要把第一页当作完整列表。空结果为第 1 页，超出末页的请求会回到末页。
+
+图片列表另含 `summary: {characters, bytes}`，表示全部匹配图片涉及的人物数与存储字节数，不受当前页影响。下载具体图片继续使用 `assets download`，不会随列表自动下载全部图片。
 
 从检索响应获取真实 ID；同名对象无法唯一定位时，请用户明确目标。列表里的剧本 `content` 是空字符串，不能当作真实正文；读取或编辑正文必须 GET `/scripts/{id}`。
 

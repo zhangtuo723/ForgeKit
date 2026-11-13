@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { apiPage } from "@/lib/client";
-import type { Pagination } from "@/lib/studio-types";
+import type { PageResult, Pagination } from "@/lib/studio-types";
 import "./studio-list.css";
 
 export function useStudioList<T>(endpoint: string, filters: Record<string, string>, defaultPageSize = 12) {
@@ -13,6 +13,7 @@ export function useStudioList<T>(endpoint: string, filters: Record<string, strin
   const [pageSize, setSize] = useState(defaultPageSize);
   const [items, setItems] = useState<T[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ page: 1, pageSize, total: 0, totalPages: 1 });
+  const [summary, setSummary] = useState<PageResult<T>["summary"]>();
   const [loading, setLoading] = useState(true), [error, setError] = useState("");
   const [refresh, setRefresh] = useState(0);
   const previousFilter = useRef(filterKey);
@@ -28,7 +29,7 @@ export function useStudioList<T>(endpoint: string, filters: Record<string, strin
         query.set("page", String(page)); query.set("pageSize", String(pageSize));
         const result = await apiPage<T>(`${endpoint}?${query}`, { signal: controller.signal });
         if (controller.signal.aborted) return;
-        setItems(result.data); setPagination(result.pagination);
+        setItems(result.data); setPagination(result.pagination); setSummary(result.summary);
         if (result.pagination.page !== page) setPosition({ filterKey, page: result.pagination.page });
       } catch (failure) { if (!controller.signal.aborted) { setItems([]); setError(failure instanceof Error ? failure.message : "列表加载失败"); } }
       finally { if (!controller.signal.aborted) setLoading(false); }
@@ -36,7 +37,7 @@ export function useStudioList<T>(endpoint: string, filters: Record<string, strin
     return () => { clearTimeout(timer); controller.abort(); };
   }, [endpoint, filterKey, page, pageSize, refresh]);
   return {
-    items, pagination, loading, error,
+    items, pagination, summary, loading, error,
     reload: useCallback(() => setRefresh(value => value + 1), []),
     setPage: (value: number) => setPosition({ filterKey, page: value }),
     setPageSize: (value: number) => { setSize(value); setPosition({ filterKey, page: 1 }); },

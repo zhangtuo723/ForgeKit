@@ -1,7 +1,7 @@
 import { ApiError } from "./api";
 import type { Pagination } from "./studio-types";
 
-export type ListOptions = { page: number; pageSize: number; q: string; status: string; scriptId: string };
+export type ListOptions = { page: number; pageSize: number; q: string; status: string; scriptId: string; characterId: string };
 export function listOptions(query: URLSearchParams): ListOptions {
   function integer(name: string, fallback: number, max: number) {
     const raw = query.get(name);
@@ -12,10 +12,12 @@ export function listOptions(query: URLSearchParams): ListOptions {
   const q = (query.get("q") || "").trim();
   const status = query.get("status") || "";
   const scriptId = query.get("scriptId") || "";
+  const characterId = query.get("characterId") || "";
   if (q.length > 200) throw new ApiError(400, "检索关键词最多 200 个字符");
   if (status && !["草稿", "创作中", "已定稿", "已归档"].includes(status)) throw new ApiError(400, "剧本状态无效");
   if (scriptId.length > 64) throw new ApiError(400, "剧本 ID 无效");
-  return { page: integer("page", 1, 1000000), pageSize: integer("pageSize", 12, 100), q, status, scriptId };
+  if (characterId.length > 64) throw new ApiError(400, "人物 ID 无效");
+  return { page: integer("page", 1, 1000000), pageSize: integer("pageSize", 12, 100), q, status, scriptId, characterId };
 }
 export function paginationFor(total: number, options: Pick<ListOptions, "page" | "pageSize">): Pagination {
   const totalPages = Math.max(1, Math.ceil(total / options.pageSize));

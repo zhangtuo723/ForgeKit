@@ -41,6 +41,22 @@ export async function getCharacters(options: ListOptions) {
 }
 export async function findCharacter(id:string,connection?:Connection) { return first<Character>(`${characterSelect} WHERE c.id=?`,[id],connection); }
 const assetSelect=`SELECT a.*,c.name AS characterName,c.scriptId,s.title AS scriptTitle FROM studio_assets a JOIN studio_characters c ON c.id=a.characterId LEFT JOIN studio_scripts s ON s.id=c.scriptId`;
+export async function listAssets(options: ListOptions) {
+  const filters: string[] = [], values: string[] = [];
+  if (options.q) { filters.push("(a.name LIKE ? ESCAPE '!' OR a.originalName LIKE ? ESCAPE '!' OR c.name LIKE ? ESCAPE '!' OR s.title LIKE ? ESCAPE '!')"); values.push(...Array(4).fill(containsPattern(options.q))); }
+  if (options.characterId) { filters.push("a.characterId=?"); values.push(options.characterId); }
+  if (options.scriptId === "unlinked") filters.push("c.scriptId IS NULL");
+  else if (options.scriptId) { filters.push("c.scriptId=?"); values.push(options.scriptId); }
+  const where = filters.length ? ` WHERE ${filters.join(" AND ")}` : "";
+  return transaction(async connection => {
+    const count = await first<{ total: number; characters: number; bytes: number }>(`SELECT COUNT(*) AS total,COUNT(DISTINCT c.id) AS characters,COALESCE(SUM(a.size),0) AS bytes FROM studio_assets a JOIN studio_characters c ON c.id=a.characterId LEFT JOIN studio_scripts s ON s.id=c.scriptId${where}`, values, connection);
+    const pagination = paginationFor(count!.total, options);
+    const data = await rows<CharacterAsset>(`${assetSelect}${where} ORDER BY a.createdAt DESC,a.id LIMIT ${pagination.pageSize} OFFSET ${(pagination.page - 1) * pagination.pageSize}`, values, connection);
+    return { data, pagination, summary: { characters: count!.characters, bytes: count!.bytes } };
+  });
+}
+// Internal deletion workflows must enumerate every image to enqueue all storage cleanup jobs.
+// HTTP lists use listAssets instead, including character profile galleries.
 export async function getAssets(characterId?:string,scriptId?:string,connection?:Connection) {
   const filters:string[]=[],values:string[]=[];
   if(characterId) {filters.push("a.characterId=?");values.push(characterId);}
